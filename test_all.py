@@ -28,7 +28,7 @@ dbManager = DatabaseManager('test.db')
 
 
 def loopix_mixes():
-    sec_params = SphinxParams(header_len=1024, body_len=1000000)
+    sec_params = SphinxParams(header_len=1024, body_len=921800)
 
     dbManager.create_mixnodes_table('Mixnodes')
     mixes = []
@@ -46,7 +46,7 @@ def loopix_mixes():
 
 
 def loopix_providers():
-    sec_params = SphinxParams(header_len=1024, body_len=1000000)
+    sec_params = SphinxParams(header_len=1024, body_len=921800)
 
     dbManager.create_providers_table('Providers')
     providers = []
@@ -65,7 +65,7 @@ def loopix_providers():
 
 def loopix_clients(pubs_providers, pubs_mixes):
 
-    sec_params = SphinxParams(header_len=1024, body_len=1000000)
+    sec_params = SphinxParams(header_len=1024, body_len=921800)
 
     dbManager.create_users_table('Users')
     clients = []
@@ -597,30 +597,30 @@ def test_take_mix_sequence():
 def test_send_video():
     import cPickle
     import cv2
-
-    filename = "example.mp4"
+    import time
+    filename = "example1.mp4"
     sender, recipient = random.sample(env.clients, 2)
     sender.transport.written = []
     provider_s = [p for p in env.providers if p.name == sender.provider.name].pop()
     provider_r = [p for p in env.providers if p.name == recipient.provider.name].pop()
- 
+    start = time.time()
     sender.send_video(filename, recipient)
-
-    packets_flags = []
-    
+    end = time.time()
+    packets_recieved = []
+    print(end - start)
     for packet, addr in sender.transport.written:
         header, body = client_process_frame(packet, env.mixes, [provider_s, provider_r])
         encoded_packet = petlib.pack.encode((header, body))
-        flag, packet = recipient.read_packet(encoded_packet)
-        packets_flags.append((flag,packet))
-    
-    for flag,packet in packets_flags: 
-        frame = cPickle.loads(packet)
-        cv2.imshow('frame',frame)
-        if cv2.waitKey(60) & 0xFF == ord('q'):
-            break
+        packets_recieved.append(encoded_packet)
+        
+    end1 = time.time()
+    print(end1 - end)
+    retrieve_packets(packets_recieved, recipient)
+    end2 = time.time()
+    print(end2 - end1)
 
     cv2.destroyAllWindows()
+    assert 0
 
 def client_process_frame(packet, mixes, providers):
     sender_provider, receiver_provider = providers
@@ -631,3 +631,28 @@ def client_process_frame(packet, mixes, providers):
         if flag == "ROUT":
             delay, header, body, next_addr, next_name = new_packet
     return header, body
+
+def retrieve_packets(packets_recieved, recipient):
+    import time
+    import cPickle
+    import cv2
+    
+    for packet in packets_recieved:
+        recipient.read_packet(packet)
+
+    #while len(packets_recieved) > 0 :
+    #    start = time.time()
+    #    for encoded_packet in packets_recieved[:200]: 
+    #        flag, packet = recipient.read_packet(encoded_packet)
+    #        assert packet[:5] == "Video"
+    #        video_frame, index = recipient.packet_to_indexed_frame(packet)
+    #        
+    #        frame = cPickle.loads(video_frame)
+    #        cv2.imshow('frame',frame)
+    #        if cv2.waitKey(50) & 0xFF == ord('q'):
+    #            break
+
+    #    end = time.time()
+    #    print("200 frames")
+    #    print(end - start)
+    #    packets_recieved = packets_recieved[200:]

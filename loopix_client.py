@@ -23,6 +23,11 @@ class LoopixClient(DatagramProtocol):
     process_queue = ProcessQueue()
     reactor = reactor
     resolvedAdrs = {}
+    stream_buffer = [None]*1000
+    frames_received = 0
+    frames_played = 0
+    playing = False
+    video_ended = False
 
     def __init__(self, sec_params, name, port, host, provider_id, privk=None, pubk=None):
         self.name = name
@@ -100,6 +105,11 @@ class LoopixClient(DatagramProtocol):
         decoded_packet = petlib.pack.decode(packet)
         if not decoded_packet[0] == 'DUMMY':
             flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
+            if decrypted_packet[:5] == "Video":
+                self.add_frame_to_buffer(decrypted_packet)
+                if (self.frames_received == 200 or self.video_ended == True) and self.playing == False:
+                    #self.reactor.callInThread(self.play_video)
+                    self.play_video()
             return (flag, decrypted_packet)
 
     def send_message(self, message, receiver):
@@ -163,15 +173,22 @@ class LoopixClient(DatagramProtocol):
         log.msg("[%s] > Stopped" % self.name)
 
     def send_frames(self, cap, receiver, path):
+        i = 0
         while True:
             ret, frame = cap.read()
             if not ret:
+                message = "Video "+ "ended"
+                header, body = self.crypto_client.pack_video_message(message, receiver, path)
+                self.send((header, body))
                 break;
 
             frame = cv2.resize(frame, (640, 480))
             pickle_frame = cPickle.dumps(frame,protocol=cPickle.HIGHEST_PROTOCOL)
-            header, body = self.crypto_client.pack_video_message(pickle_frame, receiver, path)
-            self.send((header, body))
+            #minimize i digits to 3 with mod 1000. 
+            video_frame = "Video" + str(i%1000) + "pickle" + pickle_frame
+            header, body = self.crypto_client.pack_video_message(video_frame, receiver, path)
+            self.send((header, body))#put in buffer
+            i = i + 1
 
     def send_video(self, filename, receiver):
         cap = cv2.VideoCapture(filename)
@@ -186,19 +203,37 @@ class LoopixClient(DatagramProtocol):
         log.msg("Video ended")
 
         cap.release()
+    
+    def play_video(self):
+        self.playing = True
+        while self.frames_received%1000 != self.frames_played:
+            video_frame = self.stream_buffer[self.frames_played]
+            if video_frame == None:#missing frame
+                self.frames_played = (self.frames_played + 1)%1000
+                continue
 
-        #bigger body means bigger noise length in config.
-        #otherwise the stream is slow..
-        #Not sure if we can afford to lose any chunk because of pickle. (can we?)
-        #maybe use pickle after chunking is a good idea if we do it this way (but again high load ofc..)
-        #while len(pickle_frame) > 0:
-        #    chunk = pickle_frame[:199950]
-        #    pickle_frame = pickle_frame[199950:]
-        #    header, body = self.crypto_client.pack_video_message(chunk, receiver, path)
-        #    self.send((header, body))
+            self.stream_buffer[self.frames_played] = None
+            self.frames_played = (self.frames_played + 1)%1000
 
-        #frame = cPickle.loads(decrypted_packet)
-            
-  
+            frame = cPickle.loads(video_frame)
+            cv2.imshow('frame',frame)
+            if cv2.waitKey(50) & 0xFF == ord('q'):
+                break
+
+        self.playing = False
+
+    def packet_to_indexed_frame(self, packet):
+        pickle = packet.find("pickle",5,20)#faster find
+        if pickle == -1:
+            return None, None
+        index = int(packet[5:pickle])
+        video_frame = packet[pickle+6:]
+        return video_frame, index  
         
-
+    def add_frame_to_buffer(self, decrypted_packet):
+        video_frame, index = self.packet_to_indexed_frame(decrypted_packet)
+        if index == None:
+            self.video_ended = True
+        else:
+            self.stream_buffer[index] = video_frame
+            self.frames_received +=1
