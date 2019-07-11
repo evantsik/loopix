@@ -23,7 +23,8 @@ class LoopixClient(DatagramProtocol):
     process_queue = ProcessQueue()
     reactor = reactor
     resolvedAdrs = {}
-    stream_buffer = [None]*1000
+    stream_length = 1000 #to chnage this consider adding more space to the body. 1 space for every digit
+    stream_buffer = [None]*stream_length
     frames_received = 0
     frames_played = 0
     playing = False
@@ -179,14 +180,16 @@ class LoopixClient(DatagramProtocol):
             if not ret:
                 message = "Video "+ "ended"
                 header, body = self.crypto_client.pack_video_message(message, receiver, path)
+                #self.output_buffer.put((header, body))
                 self.send((header, body))
                 break;
 
             frame = cv2.resize(frame, (640, 480))
             pickle_frame = cPickle.dumps(frame,protocol=cPickle.HIGHEST_PROTOCOL)
             #minimize i digits to 3 with mod 1000. 
-            video_frame = "Video" + str(i%1000) + "pickle" + pickle_frame
+            video_frame = "Video" + str(i%stream_length) + "pickle" + pickle_frame
             header, body = self.crypto_client.pack_video_message(video_frame, receiver, path)
+            #self.output_buffer.put((header, body))
             self.send((header, body))#put in buffer
             i = i + 1
 
@@ -206,14 +209,14 @@ class LoopixClient(DatagramProtocol):
     
     def play_video(self):
         self.playing = True
-        while self.frames_received%1000 != self.frames_played:
+        while self.frames_received%stream_length != self.frames_played:
             video_frame = self.stream_buffer[self.frames_played]
             if video_frame == None:#missing frame
-                self.frames_played = (self.frames_played + 1)%1000
+                self.frames_played = (self.frames_played + 1)%stream_length
                 continue
 
             self.stream_buffer[self.frames_played] = None
-            self.frames_played = (self.frames_played + 1)%1000
+            self.frames_played = (self.frames_played + 1)%stream_length
 
             frame = cPickle.loads(video_frame)
             cv2.imshow('frame',frame)
