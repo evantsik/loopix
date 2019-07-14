@@ -15,7 +15,7 @@ if not (os.path.exists("secretClient.prv") and os.path.exists("publicClient.bin"
     raise Exception("Key parameter files not found")
 
 secret = petlib.pack.decode(file("secretClient.prv", "rb").read())
-sec_params = SphinxParams(header_len=1024)
+sec_params = SphinxParams(header_len=1024, body_len=57800)
 try:
     data = file("publicClient.bin", "rb").read()
     _, name, port, host, _, prvinfo = petlib.pack.decode(data)
@@ -24,7 +24,7 @@ try:
     udp_server = internet.UDPServer(port, client)
     application = service.Application("Client")
     udp_server.setServiceParent(application)
-    # reactor.listenUDP(port, client)
-    # reactor.run()
+    reactor.listenUDP(port, client)
+    reactor.run()
 except Exception, e:
  	print str(e)

@@ -15,12 +15,12 @@ if not (os.path.exists("secretProvider.prv") and os.path.exists("publicProvider.
 
 secret = petlib.pack.decode(file("secretProvider.prv", "rb").read())
 _, name, port, host, _ = petlib.pack.decode(file("publicProvider.bin", "rb").read())
-sec_params = SphinxParams(header_len=1024)
+sec_params = SphinxParams(header_len=1024, body_len=57800)
 
 try:
 	provider = LoopixProvider(sec_params, name, port, host, privk=secret, pubk=None)
-	# reactor.listenUDP(port, provider)
-	# reactor.run()
+	reactor.listenUDP(port, provider)
+	reactor.run()
  	udp_server = internet.UDPServer(port, provider)
  	application = service.Application("Provider")
  	udp_server.setServiceParent(application)

@@ -184,10 +184,10 @@ class LoopixClient(DatagramProtocol):
                 self.send((header, body))
                 break;
 
-            frame = cv2.resize(frame, (640, 480))
+            frame = cv2.resize(frame, (160, 120))
             pickle_frame = cPickle.dumps(frame,protocol=cPickle.HIGHEST_PROTOCOL)
             #minimize i digits to 3 with mod 1000. 
-            video_frame = "Video" + str(i%stream_length) + "pickle" + pickle_frame
+            video_frame = "Video" + str(i%self.stream_length) + "pickle" + pickle_frame
             header, body = self.crypto_client.pack_video_message(video_frame, receiver, path)
             #self.output_buffer.put((header, body))
             self.send((header, body))#put in buffer
@@ -209,16 +209,17 @@ class LoopixClient(DatagramProtocol):
     
     def play_video(self):
         self.playing = True
-        while self.frames_received%stream_length != self.frames_played:
+        while self.frames_received%self.stream_length != self.frames_played:
             video_frame = self.stream_buffer[self.frames_played]
             if video_frame == None:#missing frame
-                self.frames_played = (self.frames_played + 1)%stream_length
+                self.frames_played = (self.frames_played + 1)%self.stream_length
                 continue
 
             self.stream_buffer[self.frames_played] = None
-            self.frames_played = (self.frames_played + 1)%stream_length
+            self.frames_played = (self.frames_played + 1)%self.stream_length
 
             frame = cPickle.loads(video_frame)
+            frame = cv2.resize(frame, (640, 480))
             cv2.imshow('frame',frame)
             if cv2.waitKey(50) & 0xFF == ord('q'):
                 break
