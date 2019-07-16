@@ -1,5 +1,5 @@
 import pytest
-from .loopix_client import LoopixClient
+from loopix_client import LoopixClient
 from loopix_mixnode import LoopixMixNode
 from loopix_provider import LoopixProvider
 from support_formats import Mix, Provider, User

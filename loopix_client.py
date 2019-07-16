@@ -50,6 +50,12 @@ class LoopixClient(DatagramProtocol):
         self.make_loop_stream()
         self.make_drop_stream()
         self.make_real_stream()
+        #if self.name != 'Client1':
+            #path = self.construct_full_path(self.befriended_clients[0])
+            #self.send_video('../../example.mp4', self.befriended_clients[0])
+            #for i in range(100):
+            #    header, body = self.crypto_client.pack_real_message('hello fucker', self.befriended_clients[0], path)
+            #    self.output_buffer.put((header, body))
 
     def get_network_info(self):
         self.dbManager = DatabaseManager(self.config_params.DATABASE_NAME)
@@ -96,7 +102,7 @@ class LoopixClient(DatagramProtocol):
         self.process_queue.put(data)
 
     def handle_packet(self, packet):
-        self.read_packet(packet)
+        flag, decrypted_packet = self.read_packet(packet)
         try:
             self.reactor.callFromThread(self.get_and_addCallback, self.handle_packet)
         except Exception, exp:
@@ -108,10 +114,12 @@ class LoopixClient(DatagramProtocol):
             flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
             if decrypted_packet[:5] == "Video":
                 self.add_frame_to_buffer(decrypted_packet)
+                print(self.frames_received)
                 if (self.frames_received == 200 or self.video_ended == True) and self.playing == False:
                     #self.reactor.callInThread(self.play_video)
                     self.play_video()
             return (flag, decrypted_packet)
+        return None, None
 
     def send_message(self, message, receiver):
         path = self.construct_full_path(receiver)
@@ -180,8 +188,8 @@ class LoopixClient(DatagramProtocol):
             if not ret:
                 message = "Video "+ "ended"
                 header, body = self.crypto_client.pack_video_message(message, receiver, path)
-                #self.output_buffer.put((header, body))
-                self.send((header, body))
+                self.output_buffer.put((header, body))
+                #self.send((header, body))
                 break;
 
             frame = cv2.resize(frame, (160, 120))
@@ -189,8 +197,8 @@ class LoopixClient(DatagramProtocol):
             #minimize i digits to 3 with mod 1000. 
             video_frame = "Video" + str(i%self.stream_length) + "pickle" + pickle_frame
             header, body = self.crypto_client.pack_video_message(video_frame, receiver, path)
-            #self.output_buffer.put((header, body))
-            self.send((header, body))#put in buffer
+            self.output_buffer.put((header, body))
+            #self.send((header, body))#put in buffer
             i = i + 1
 
     def send_video(self, filename, receiver):

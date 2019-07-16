@@ -1,10 +1,29 @@
-python setup_client.py 9993 '1.1.3.4' 'Client1' 'Provider1'
-python setup_client.py 9992 '1.2.3.4' 'Client2' 'Provider2'
-python setup_mixnode.py 9999 '1.2.3.1' 'Mix1' 1
-python setup_mixnode.py 9998 '1.2.3.2' 'Mix2' 2
-python setup_mixnode.py 9997 '1.2.3.3' 'Mix3' 3
-python setup_provider.py 9995 '1.2.1.4' 'Provider1'
-python setup_provider.py 9994 '1.2.2.4' 'Provider2'
+python setup_mixnode.py 9999 '127.0.0.1' 'Mix1' 0
+python run_mixnode.py
+
+python setup_mixnode.py 9998 '127.0.0.1' 'Mix2' 1
+python run_mixnode.py
+
+python setup_mixnode.py 9997 '127.0.0.1' 'Mix3' 2
+python run_mixnode.py
+
+python setup_provider.py 9995 '127.0.0.1' 'Provider1'
+python run_provider.py
+
+python setup_provider.py 9994 '127.0.0.1' 'Provider2'
+python run_provider.py
+
+python setup_client.py 9993 '127.0.0.1' 'Client1' 'Provider1'
+python run_client.py
+
+python setup_client.py 9992 '127.0.0.1' 'Client2' 'Provider2'
+python run_client.py
+
+After every run delete the files created from the setup.
+
+Alternative use run_all.py with parameters: mix,provider,client 1,2,3
+e.g. python run_all.py mix 1
+To use this you have to run the setup_exampledb.py as specified in the file.
 
 
 /usr/local/lib/python2.7/dist-packages/twisted/internet

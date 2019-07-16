@@ -2,6 +2,7 @@ import core
 import sys
 import petlib.pack
 import os.path
+from database_connect import DatabaseManager
 
 if __name__ == "__main__":
 

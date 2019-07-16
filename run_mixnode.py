@@ -1,5 +1,5 @@
 import os
-import sys, traceback
+import sys
 current_path = os.getcwd()
 print "Current Path: %s" % current_path
 sys.path += [current_path]
@@ -22,7 +22,6 @@ sec_params = SphinxParams(header_len=1024, body_len=57800)
 try:
 	data = file("publicMixnode.bin", "rb").read()
 	_, name, port, host, group, _ = petlib.pack.decode(data)
-
 	mix = LoopixMixNode(sec_params, name, port, host, group, privk=secret, pubk=None)
 	reactor.listenUDP(port, mix)
 	reactor.run()
@@ -31,6 +30,4 @@ try:
 	udp_server.setServiceParent(application)
 
 except Exception, e:
-	exc_type, exc_value, exc_traceback = sys.exc_info()
-	traceback.print_tb(exc_traceback)
 	print str(e)
