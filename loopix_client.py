@@ -114,7 +114,6 @@ class LoopixClient(DatagramProtocol):
             flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
             if decrypted_packet[:5] == "Video":
                 self.add_frame_to_buffer(decrypted_packet)
-                print(self.frames_received)
                 if (self.frames_received == 200 or self.video_ended == True) and self.playing == False:
                     #self.reactor.callInThread(self.play_video)
                     self.play_video()
