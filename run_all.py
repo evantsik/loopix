@@ -16,8 +16,7 @@ from sphinxmix.SphinxParams import SphinxParams
 name = str(sys.argv[1])
 i = int(sys.argv[2])
 body = 57800
-#recieving only 8192, lets fix it
-#body = 1024
+
 if name == 'client':
     secret = petlib.pack.decode(file("../example/secretClient%d.prv"%i, "rb").read())
     sec_params = SphinxParams(header_len=1024, body_len=body)
