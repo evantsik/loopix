@@ -26,6 +26,5 @@ try:
     udp_server.setServiceParent(application)
     reactor.listenUDP(port, client)
     reactor.run()
-
 except Exception, e:
  	print str(e)

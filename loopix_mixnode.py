@@ -31,7 +31,7 @@ class LoopixMixNode(DatagramProtocol):
         print "[%s] > Started" % self.name
         self.get_network_info()
         self.turn_on_processing()
-        self.make_loop_stream()
+        #self.make_loop_stream()
 
     def get_network_info(self):
         self.dbManager = DatabaseManager(self.config_params.DATABASE_NAME)

@@ -16,7 +16,9 @@ from sphinxmix.SphinxParams import SphinxParams
 name = str(sys.argv[1])
 i = int(sys.argv[2])
 body = 57800
-
+#recieving only 8192, lets fix it
+body = 57865
+packet_size = 59000
 if name == 'client':
     secret = petlib.pack.decode(file("../example/secretClient%d.prv"%i, "rb").read())
     sec_params = SphinxParams(header_len=1024, body_len=body)
@@ -28,7 +30,7 @@ if name == 'client':
         udp_server = internet.UDPServer(port, client)
         application = service.Application("Client")
         udp_server.setServiceParent(application)
-        reactor.listenUDP(port, client, maxPacketSize=58855)
+        reactor.listenUDP(port, client, maxPacketSize=59000)
         reactor.run()
 
     except Exception, e:
@@ -41,7 +43,7 @@ elif name == 'provider':
 
     try:
         provider = LoopixProvider(sec_params, name, port, host, privk=secret, pubk=None)
-        reactor.listenUDP(port, provider, maxPacketSize=58855)
+        reactor.listenUDP(port, provider, maxPacketSize=59000)
         reactor.run()
         udp_server = internet.UDPServer(port, provider)
         application = service.Application("Provider")
@@ -57,7 +59,7 @@ elif name == 'mix':
         data = file("../example/publicMixnode%d.bin"%i, "rb").read()
         _, name, port, host, group, _ = petlib.pack.decode(data)
         mix = LoopixMixNode(sec_params, name, port, host, group, privk=secret, pubk=None)
-        reactor.listenUDP(port, mix, maxPacketSize=58855)
+        reactor.listenUDP(port, mix, maxPacketSize=59000)
         reactor.run()
         udp_server = internet.UDPServer(port, mix)
         application = service.Application("Mixnode")

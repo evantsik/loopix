@@ -44,7 +44,7 @@ class SphinxPacker(object):
     def __init__(self, params):
         self.sec_params, self.config = params
 
-    def make_sphinx_packet(self, receiver, path, message, drop_flag=False, type_flag=None,video_flag=False):
+    def make_sphinx_packet(self, receiver, path, message, drop_flag=False, type_flag=None, video_flag=False):
         keys_nodes = self.take_nodes_keys(path)
         routing_info = self.take_nodes_routing(path, drop_flag, type_flag,video_flag)
         dest = (receiver.host, receiver.port, receiver.name)

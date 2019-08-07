@@ -1,5 +1,5 @@
 import pytest
-from loopix_client import LoopixClient
+from .loopix_client import LoopixClient
 from loopix_mixnode import LoopixMixNode
 from loopix_provider import LoopixProvider
 from support_formats import Mix, Provider, User
@@ -28,7 +28,7 @@ dbManager = DatabaseManager('test.db')
 
 
 def loopix_mixes():
-    sec_params = SphinxParams(header_len=1024, body_len=921800)
+    sec_params = SphinxParams(header_len=1024, body_len=57865)
 
     dbManager.create_mixnodes_table('Mixnodes')
     mixes = []
@@ -46,7 +46,7 @@ def loopix_mixes():
 
 
 def loopix_providers():
-    sec_params = SphinxParams(header_len=1024, body_len=921800)
+    sec_params = SphinxParams(header_len=1024, body_len=57865)
 
     dbManager.create_providers_table('Providers')
     providers = []
@@ -65,7 +65,7 @@ def loopix_providers():
 
 def loopix_clients(pubs_providers, pubs_mixes):
 
-    sec_params = SphinxParams(header_len=1024, body_len=921800)
+    sec_params = SphinxParams(header_len=1024, body_len=57865)
 
     dbManager.create_users_table('Users')
     clients = []
@@ -619,6 +619,8 @@ def test_send_video():
     end2 = time.time()
     print(end2 - end1)
 
+    print(len(sender.transport.written))#number of frames
+
     cv2.destroyAllWindows()
     assert 0
 
@@ -633,7 +635,6 @@ def client_process_frame(packet, mixes, providers):
     return header, body
 
 def retrieve_packets(packets_recieved, recipient):
-    import time
     import cPickle
     import cv2
     
