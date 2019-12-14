@@ -54,7 +54,7 @@ class LoopixClient(DatagramProtocol):
         #self.make_drop_stream()
         self.make_real_stream()
         if self.name != 'Client1':
-            self.send_video('../../example.mp4', self.befriended_clients[0])
+            self.send_video('../../example3.mp4', self.befriended_clients[0])
 
     def get_network_info(self):
         self.dbManager = DatabaseManager(self.config_params.DATABASE_NAME)
@@ -113,10 +113,10 @@ class LoopixClient(DatagramProtocol):
             flag, decrypted_packet = self.crypto_client.process_packet(decoded_packet)
             if decrypted_packet[:5] == "Video":
                 self.add_chunk_to_buffer(decrypted_packet)
-                #print('Recieved video frame')
+                print(self.frames_received)
                 if (self.frames_received == self.buffering or self.video_ended == True) and self.playing == False:
-                    #self.reactor.callInThread(self.play_video)
-                    self.play_video()
+                    self.reactor.callInThread(self.play_video)
+                    #self.play_video()
             return (flag, decrypted_packet)
 
     def send_message(self, message, receiver):
@@ -184,18 +184,19 @@ class LoopixClient(DatagramProtocol):
             chunk = "Video" + str(i%self.stream_length) + "pickle"+ str(j) + pickle_frame[:57800]
             pickle_frame = pickle_frame[57800:]
             header, body = self.crypto_client.pack_video_message(chunk, receiver, path)
-            self.send((header, body))
-            #self.output_buffer.put((header, body))
+            #self.send((header, body))
+            self.output_buffer.put((header, body))
 
-    def send_frames(self, cap, receiver, path):
+    def send_frames(self, cap, receiver):
         i = 0
         while True:
             ret, frame = cap.read()
+            path = self.construct_full_path(receiver)
             if not ret:
                 message = "Video "+ "ended"
                 header, body = self.crypto_client.pack_video_message(message, receiver, path)
-                self.send((header, body))
-                #self.output_buffer.put((header, body))
+                #self.send((header, body))
+                self.output_buffer.put((header, body))
                 break;
 
             frame = cv2.resize(frame, (320,240))
@@ -209,10 +210,8 @@ class LoopixClient(DatagramProtocol):
             log.msg("[%s] Error loading video file" % filename)
             return False
 
-        path = self.construct_full_path(receiver)
-
         log.msg("Sending Video")
-        self.send_frames(cap, receiver, path)
+        self.send_frames(cap, receiver)
         log.msg("Video ended")
 
         cap.release()
@@ -239,10 +238,12 @@ class LoopixClient(DatagramProtocol):
             frame = cPickle.loads(video_frame)
             frame = cv2.resize(frame, (640, 480))
             cv2.imshow('frame',frame)
-            if cv2.waitKey(50) & 0xFF == ord('q'):
+            if cv2.waitKey(60) & 0xFF == ord('q'):
                 break
 
         self.playing = False
+        if self.video_ended == True:
+            cv2.destroyAllWindows()
 
     def packet_to_indexed_chunk(self, packet):
         pickle = packet.find("pickle",5,20)#faster find

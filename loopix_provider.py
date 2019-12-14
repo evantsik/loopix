@@ -33,14 +33,15 @@ class LoopixProvider(LoopixMixNode):
                 self.subscribe_client(decoded_packet[1:])
             elif decoded_packet[0] == 'PULL':
                 pulled_messages = self.pull_messages(client_id=decoded_packet[1])
-                map(lambda (packet, addr): self.send(packet, addr),
-                    zip(pulled_messages, itertools.repeat(self.clients[decoded_packet[1]])))
+                #map(lambda (packet, addr): self.send(packet, addr),
+                #    zip(pulled_messages, itertools.repeat(self.clients[decoded_packet[1]])))
             else:
                 flag, decrypted_packet = self.crypto_node.process_packet(decoded_packet)
                 if flag == "ROUT":
                     delay, new_header, new_body, next_addr, next_name = decrypted_packet
                     if self.is_assigned_client(next_name):
-                        self.put_into_storage(next_name, (new_header, new_body))
+                        self.send((new_header, new_body), self.clients[next_name])
+                        #self.put_into_storage(next_name, (new_header, new_body))
                     else:
                         self.reactor.callFromThread(self.send_or_delay,
                                                     delay,

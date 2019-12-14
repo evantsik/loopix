@@ -64,7 +64,7 @@ class SphinxPacker(object):
         return nodes_routing
 
     def generate_random_delay(self, param, video_flag=False):
-        if float(param) == 0.0 or video_flag:
+        if float(param) == 0.0:
             return 0.0
         else:
             return sample_from_exponential(self.config.EXP_PARAMS_DELAY)
